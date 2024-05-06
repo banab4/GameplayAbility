@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "SYRotateActor.generated.h"
 
+class UGameplayAbility;
 class URotatingMovementComponent;
 class UAbilitySystemComponent;
 
@@ -18,7 +19,6 @@ public:
 	ASYRotateActor();
 
 protected:
-	virtual void BeginPlay() override;
 	virtual void PostInitializeComponents() override;
 
 	bool IsRotating();
@@ -27,11 +27,12 @@ protected:
 protected:
 	UPROPERTY()
 	UAbilitySystemComponent* AbilitySystemComponent;
-
+	
 	UPROPERTY()
 	URotatingMovementComponent* RotatingMovementComponent;
 
-	FTimerHandle RotateTimerHandle;
+	UPROPERTY(EditDefaultsOnly)
+	TArray<TSubclassOf<UGameplayAbility>> GrantedAbilityClasses;
 
-	
+	FTimerHandle RotateTimerHandle;
 };

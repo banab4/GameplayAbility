@@ -14,22 +14,27 @@ ASYRotateActor::ASYRotateActor()
 	RotatingMovementComponent = CreateDefaultSubobject<URotatingMovementComponent>(FName("M"));
 }
 
-void ASYRotateActor::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
 void ASYRotateActor::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 
-	FGameplayAbilitySpec Spec(USYGA_Rotate::StaticClass());
-	AbilitySystemComponent->GiveAbility(Spec);
+	if (RotatingMovementComponent)
+	{
+		RotatingMovementComponent->bAutoActivate = false;
+		RotatingMovementComponent->Deactivate();
+	}
+
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
+		for (UClass* AbilityClass : GrantedAbilityClasses)
+		{
+			FGameplayAbilitySpec Spec(AbilityClass);
+			AbilitySystemComponent->GiveAbility(Spec);
+		}
+	}
 	
-	RotatingMovementComponent->Deactivate();
-
-
 	if (UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().SetTimer(RotateTimerHandle,this, &ThisClass::OnRotateTimer, 3, true);
@@ -38,9 +43,10 @@ void ASYRotateActor::PostInitializeComponents()
 
 bool ASYRotateActor::IsRotating()
 {
-	if (FGameplayAbilitySpec* Spec = AbilitySystemComponent ? AbilitySystemComponent->FindAbilitySpecFromClass(USYGA_Rotate::StaticClass()) : nullptr)
+	if (AbilitySystemComponent)
 	{
-		if (Spec->IsActive())
+		FGameplayTag Tag = FGameplayTag::RequestGameplayTag(TEXT("Actor.State.Rotate"));
+		if (AbilitySystemComponent->HasAnyMatchingGameplayTags(FGameplayTagContainer(Tag)))
 		{
 			return true;
 		}
@@ -53,13 +59,14 @@ void ASYRotateActor::OnRotateTimer()
 {
 	if (AbilitySystemComponent)
 	{
+		FGameplayTagContainer TagContainer(FGameplayTag::RequestGameplayTag(TEXT("Actor.Action.Rotate")));
 		if (IsRotating())
 		{
-			AbilitySystemComponent->CancelAbility(USYGA_Rotate::StaticClass()->GetDefaultObject<UGameplayAbility>());
+			AbilitySystemComponent->CancelAbilities(&TagContainer);
 		}
 		else
 		{
-			AbilitySystemComponent->TryActivateAbilityByClass(USYGA_Rotate::StaticClass());
+			AbilitySystemComponent->TryActivateAbilitiesByTag(TagContainer);
 		}
 	}
 }
