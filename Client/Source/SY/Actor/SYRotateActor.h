@@ -17,8 +17,6 @@ class SY_API ASYRotateActor : public AActor
 public:	
 	ASYRotateActor();
 
-	virtual void Tick(float DeltaTime) override;
-	
 protected:
 	virtual void BeginPlay() override;
 	virtual void PostInitializeComponents() override;
@@ -34,4 +32,6 @@ protected:
 	URotatingMovementComponent* RotatingMovementComponent;
 
 	FTimerHandle RotateTimerHandle;
+
+	
 };
