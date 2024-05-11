@@ -68,14 +68,22 @@ DerivedDataCache/*
 *.ipch
 
 
-# SY
+### SY
+# Unreal
 */Saved/*
 Saved/*
 */Intermediate/*
 Intermediate/*
 Plugins/*/Intermediate/*
+*/Platforms/*
+*/Binaries/*
+
+# VS
 *.vsconfig
 *.DotSettings.user
-*/Platforms/*
+
+# Rider
 */.idea/*
-*/Binaries/*
+
+# Game
+Content/External/*
