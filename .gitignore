@@ -71,10 +71,7 @@ DerivedDataCache/*
 ### SY
 # Unreal
 */Saved/*
-Saved/*
 */Intermediate/*
-Intermediate/*
-Plugins/*/Intermediate/*
 */Platforms/*
 */Binaries/*
 
@@ -86,4 +83,4 @@ Plugins/*/Intermediate/*
 */.idea/*
 
 # Game
-Content/External/*
+*/Content/External/*
