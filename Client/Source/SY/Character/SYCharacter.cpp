@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "SYCharacter.h"
+
+#include "AbilitySystemComponent.h"
 #include "Engine/LocalPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -10,6 +12,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Framework/SYPlayerState.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -54,14 +57,36 @@ ASYCharacter::ASYCharacter()
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
-void ASYCharacter::BeginPlay()
+UAbilitySystemComponent* ASYCharacter::GetAbilitySystemComponent() const
 {
-	// Call the base class  
-	Super::BeginPlay();
+	return AbilitySystemComponent.Get();
 }
 
 //////////////////////////////////////////////////////////////////////////
 // Input
+
+void ASYCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (ASYPlayerState* PS = GetPlayerState<ASYPlayerState>())
+	{
+		if (UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent())
+		{
+			AbilitySystemComponent = ASC;
+			ASC->InitAbilityActorInfo(PS, this);
+
+			for (auto Pair : GrantedAbilities)
+			{
+				TSubclassOf<UGameplayAbility> GAClass = Pair.Value;
+				int32 InputId = Pair.Key;
+				int32 Level = 1;
+				
+				ASC->GiveAbility(FGameplayAbilitySpec(GAClass, Level, InputId));
+			}
+		}
+	}
+}
 
 void ASYCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -78,9 +103,9 @@ void ASYCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
 		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::OnInputStarted_Ability, 0);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ThisClass::OnInputCompleted_Ability, 0);
+		
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASYCharacter::Move);
 
@@ -126,5 +151,31 @@ void ASYCharacter::Look(const FInputActionValue& Value)
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+void ASYCharacter::OnInputStarted_Ability(int32 InputId)
+{
+	if (InputId == 0)
+	{
+		if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+		{
+			FGameplayTag JumpTag = FGameplayTag::RequestGameplayTag("Character.Action.Jump");
+			ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(JumpTag));
+		}
+	}
+}
+
+void ASYCharacter::OnInputCompleted_Ability(int32 InputId)
+{
+	if (InputId == 0)
+	{
+		if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+		{
+			if (FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromInputID(InputId))
+			{
+				ASC->CancelAbilityHandle(Spec->Handle);
+			}
+		}
 	}
 }

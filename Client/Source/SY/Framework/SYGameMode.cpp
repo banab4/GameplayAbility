@@ -1,8 +1,11 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "SYGameMode.h"
-#include "SYCharacter.h"
+#include "Character/SYCharacter.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Modules/ModuleManager.h"
+
+IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, SY, "SY" );
 
 ASYGameMode::ASYGameMode()
 {
