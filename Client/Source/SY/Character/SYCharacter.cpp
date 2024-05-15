@@ -102,14 +102,10 @@ void ASYCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
-		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::OnInputStarted_Ability, 0);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ThisClass::OnInputCompleted_Ability, 0);
-		
-		// Moving
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::OnInputStarted_Ability, 1);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ThisClass::OnInputCompleted_Ability, 1);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ThisClass::OnInputStarted_Ability, 2);
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASYCharacter::Move);
-
-		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASYCharacter::Look);
 	}
 	else
@@ -156,21 +152,26 @@ void ASYCharacter::Look(const FInputActionValue& Value)
 
 void ASYCharacter::OnInputStarted_Ability(int32 InputId)
 {
-	if (InputId == 0)
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 	{
-		if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+		if (InputId == 1)
 		{
 			FGameplayTag JumpTag = FGameplayTag::RequestGameplayTag("Character.Action.Jump");
 			ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(JumpTag));
+		}
+		else if(InputId == 2)
+		{
+			FGameplayTag AttackTag = FGameplayTag::RequestGameplayTag("Character.Action.Attack");
+			ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
 		}
 	}
 }
 
 void ASYCharacter::OnInputCompleted_Ability(int32 InputId)
 {
-	if (InputId == 0)
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 	{
-		if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+		if (InputId == 1)
 		{
 			if (FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromInputID(InputId))
 			{
